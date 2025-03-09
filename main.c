@@ -2,9 +2,27 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+// Check if buffer allocated with error
+void is_buff_error(void *ptr) {
+    if (!ptr) {
+        fprintf(stderr, "Error: can't allocate buffer");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void print_args(char **args) {
+    int pos = 0;
+    while (args[pos] != NULL) {
+        printf("%d)arg - %s\n", pos + 1, args[pos]);
+        pos++;
+    }
+    return;
+}
+
 // Parse line by spaces
 #define ARGS_SIZE 40
-#define SPACE ' '
+#define SPACE " \t\r\n\a"
 char **parse_line(char *line) {
     int args_size = ARGS_SIZE, position = 0;
     char **args = malloc(sizeof(char *) * args_size);
@@ -25,13 +43,6 @@ char **parse_line(char *line) {
     return args;
 }
 
-// Check if buffer allocated with error
-void is_buff_error(char *buff) {
-    if (!buff) {
-        fprintf(stderr, "Error: can't allocate buffer");
-        exit(EXIT_FAILURE);
-    }
-}
 // Read all user command line from stdin 
 #define LINE_BUFF_SIZE 1024
 char *read_line() {
@@ -73,6 +84,7 @@ void shell_loop(void) {
         printf("> ");
         line = read_line();
         args = parse_line(line);
+        print_args(args);
         //status = execute_command(args);
     } while (status);
 
