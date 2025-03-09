@@ -118,7 +118,7 @@ char *read_line() {
 }
 
 int shell_launch(char **args) {
-    pid_t pid, wait_pid;
+    pid_t pid;
     int status;
 
     // Forking the current process 
@@ -147,7 +147,7 @@ int shell_launch(char **args) {
         // The system call waitpid() blocks the execution of the current process until the child process 
         // it created either terminates or change state
         do {
-            wait_pid = waitpid(wait_pid, &status, WUNTRACED);
+            waitpid(pid, &status, WUNTRACED);
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
     }
     // Child process was finished, return success, so shell could prompt for the next command
@@ -209,6 +209,7 @@ void shell_loop(void) {
     }
     do {
         printf("%s%s%s>%s ", BLUE, cwd, GREEN, RESET_COLOR);
+        fflush(stdout);          
         line = read_line();
         args = parse_line(line);
         status = shell_execute(args);
