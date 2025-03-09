@@ -21,8 +21,13 @@ extern char *builtin_str[];
 extern int (*builtin_func[])(char **);
 
 typedef struct {
+  const char *pmn;
+  const char *suggestion;
+} PackageInfo;
+
+typedef struct {
     const char *path;
-    const char *suggestion;
+    PackageInfo packageInfo;
 } PackageManager;
 
 #endif 

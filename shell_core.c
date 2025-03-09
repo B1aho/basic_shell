@@ -14,25 +14,55 @@ void is_buff_error(void *ptr) {
 }
 
 PackageManager pkg_managers[] = {
-    {"/usr/bin/apt", "   sudo apt install "},    // Debian, Ubuntu
-    {"/usr/bin/dpkg", "   sudo dpkg install "},   // Debian-based
-    {"/usr/bin/pacman", "   sudo pacman -S "}, // Arch Linux
-    {"/usr/bin/yum", "   sudo yum install "},    // RHEL, CentOS
-    {"/usr/bin/dnf", "   sudo dnf install "},    // Fedora
-    {"/usr/bin/zypper", "   sudo zypper install "}, // openSUSE
-    {"/usr/bin/emerge", "   sudo emerge "}, // Gentoo
-    {"/usr/bin/brew", "   brew install "},   // macOS (Homebrew)
-    {"/usr/bin/pkg", "   sudo pkg install "},    // FreeBSD
-    {NULL, NULL}
+    {"/usr/bin/apt", {"sudo apt install ", "apt"}},    // Debian, Ubuntu
+    {"/usr/bin/dpkg", {"sudo dpkg install ", "dpkg"}},   // Debian-based
+    {"/usr/bin/pacman", {"sudo pacman -S ", "pacman"}}, // Arch Linux
+    {"/usr/bin/yum", {"sudo yum install ", "yum"}},    // RHEL, CentOS
+    {"/usr/bin/dnf", {"sudo dnf install ", "dnf"}},    // Fedora
+    {"/usr/bin/zypper", {"sudo zypper install ", "zypper"}}, // openSUSE
+    {"/usr/bin/emerge", {"sudo emerge ", "emerge"}}, // Gentoo
+    {"/usr/bin/brew", {"brew install ", "brew"}},   // macOS (Homebrew)
+    {"/usr/bin/pkg", {"sudo pkg install ", "pkg"}},    // FreeBSD
+    {NULL, {NULL, NULL}}
 };
 
-const char *detect_pkg_manager() {
+PackageInfo detect_pkg_manager() {
     for (int i = 0; pkg_managers[i].path != NULL; i++) {
         if (access(pkg_managers[i].path, F_OK) == 0) {
-            return pkg_managers[i].suggestion;  // Return current packet manager of OS
+            return pkg_managers[i].packageInfo;  // Return current packet manager of OS
         }
     }
-    return NULL;  // If not found
+    return (PackageInfo){NULL, NULL};  // If not found
+}
+
+// Check if package avaliable to download
+int package_available(const char *pkg_manager, const char *package) {
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        return 0;
+    }
+
+    // Check package avaliability in child process
+    if (pid == 0) {
+        if (strstr(pkg_manager, "apt")) {
+            execlp("apt-cache", "apt-cache", "show", package, NULL);
+        } else if (strstr(pkg_manager, "yum") || strstr(pkg_manager, "dnf")) {
+            execlp(pkg_manager, pkg_manager, "info", package, NULL);
+        } else if (strstr(pkg_manager, "pacman")) {
+            execlp("pacman", "pacman", "-Si", package, NULL);
+        } else if (strstr(pkg_manager, "zypper")) {
+            execlp("zypper", "zypper", "info", package, NULL);
+        } else if (strstr(pkg_manager, "brew")) {
+            execlp("brew", "brew", "info", package, NULL);
+        }
+        exit(EXIT_FAILURE);  
+    } 
+    // Block waiting for parent process
+    int status;
+    waitpid(pid, &status, 0);
+    
+    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
 void print_args(char **args) {
@@ -127,14 +157,18 @@ int shell_launch(char **args) {
     if (pid == 0) {
         // The child process code - init process with new programm (that user want to execute)
         if (execvp(args[0], args)) {
-            const char *pmn = detect_pkg_manager();
+            PackageInfo pack_info = detect_pkg_manager();
             fprintf(stderr, "Command '%s' not found.\n", args[0]);
-            if (pmn) {
-                printf("You may install it using:\n");
-                printf("%s%s\n", pmn, args[0]);
+            if (pack_info.pmn) {
+                if (package_available(pack_info.pmn, args[0])) {
+                    printf("You may install it using:\n");
+                    printf("%s%s\n", pack_info.suggestion, args[0]);
+                } else {
+                    printf("Package is not avaliable");
+                }
                 // exit особый нужен
             } else {
-                perror("Packet manager not found.");
+                perror("Package manager not found.");
             }
         }
         // If the program execution is successful, execvp() will never return, as the current process is replaced by the new program
