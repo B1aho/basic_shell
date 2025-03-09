@@ -178,10 +178,9 @@ void shell_loop(void) {
         return;
     }
     do {
-        printf("%s> ", cwd);
+        printf("%s%s%s>%s ", BLUE, cwd, GREEN, RESET_COLOR);
         line = read_line();
         args = parse_line(line);
-        print_args(args);
         status = shell_execute(args);
         // Update cwd if working directory changed
         if (args[0] && !strncmp(args[0], "cd", 2)) {
