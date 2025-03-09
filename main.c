@@ -1,9 +1,34 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
+// Parse line by spaces
+#define ARGS_SIZE 40
+#define SPACE ' '
+char **parse_line(char *line) {
+    int args_size = ARGS_SIZE, position = 0;
+    char **args = malloc(sizeof(char *) * args_size);
+    is_buff_error(args);
+    // The function returns lexemes from the string and replaces delimiters with \0
+    char *token = strtok(line, SPACE);
+    while (token != NULL) {
+        args[position++] = token;
+
+        if (position >= args_size) {
+            args_size += ARGS_SIZE;
+            args = realloc(args, args_size * sizeof(char *));
+            is_buff_error(args);
+        }
+        token = strtok(NULL, SPACE);
+    }
+    args[position] = NULL;
+    return args;
+}
+
+// Check if buffer allocated with error
 void is_buff_error(char *buff) {
     if (!buff) {
-        fprintf(stderr, "Error: can't allocate buffer for line");
+        fprintf(stderr, "Error: can't allocate buffer");
         exit(EXIT_FAILURE);
     }
 }
@@ -47,7 +72,7 @@ void shell_loop(void) {
     do {
         printf("> ");
         line = read_line();
-        //args = parse_line(line);
+        args = parse_line(line);
         //status = execute_command(args);
     } while (status);
 
