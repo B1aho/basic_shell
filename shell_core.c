@@ -3,7 +3,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <unistd.h>
 #include "shell.h"
 
 // Check if buffer allocated with error
@@ -100,6 +99,26 @@ int shell_launch(char **args) {
     return 1;
 }
 
+// Execute command
+int shell_execute(char **args) {
+  int i;
+
+  if (args[0] == NULL) {
+    // An empty command was entered
+    return 1;
+  }
+
+  // Check if command is builtin
+  for (i = 0; i < num_builtins(); i++) {
+    if (strcmp(args[0], builtin_str[i]) == 0) {
+      return (*builtin_func[i])(args);
+    }
+  }
+
+  // Execute not builtin program
+  return shell_launch(args);
+}
+
 /**
  * 1. Read command from standart input - stdin
  * 2. Parse command
@@ -114,8 +133,7 @@ void shell_loop(void) {
         printf("> ");
         line = read_line();
         args = parse_line(line);
-        status = shell_launch(args);
-        //status = execute_command(args);
+        status = shell_execute(args);
     } while (status);
 
     free(line);
