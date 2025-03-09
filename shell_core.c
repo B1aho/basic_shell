@@ -3,7 +3,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include "shell.h"
+#include "include/shell.h"
 
 // Check if buffer allocated with error
 void is_buff_error(void *ptr) {
@@ -11,6 +11,28 @@ void is_buff_error(void *ptr) {
         fprintf(stderr, "Error: can't allocate buffer");
         exit(EXIT_FAILURE);
     }
+}
+
+PackageManager pkg_managers[] = {
+    {"/usr/bin/apt", "   sudo apt install "},    // Debian, Ubuntu
+    {"/usr/bin/dpkg", "   sudo dpkg install "},   // Debian-based
+    {"/usr/bin/pacman", "   sudo pacman -S "}, // Arch Linux
+    {"/usr/bin/yum", "   sudo yum install "},    // RHEL, CentOS
+    {"/usr/bin/dnf", "   sudo dnf install "},    // Fedora
+    {"/usr/bin/zypper", "   sudo zypper install "}, // openSUSE
+    {"/usr/bin/emerge", "   sudo emerge "}, // Gentoo
+    {"/usr/bin/brew", "   brew install "},   // macOS (Homebrew)
+    {"/usr/bin/pkg", "   sudo pkg install "},    // FreeBSD
+    {NULL, NULL}
+};
+
+const char *detect_pkg_manager() {
+    for (int i = 0; pkg_managers[i].path != NULL; i++) {
+        if (access(pkg_managers[i].path, F_OK) == 0) {
+            return pkg_managers[i].suggestion;  // Return current packet manager of OS
+        }
+    }
+    return NULL;  // If not found
 }
 
 void print_args(char **args) {
@@ -105,7 +127,15 @@ int shell_launch(char **args) {
     if (pid == 0) {
         // The child process code - init process with new programm (that user want to execute)
         if (execvp(args[0], args)) {
-            perror("execute programm fail");
+            const char *pmn = detect_pkg_manager();
+            fprintf(stderr, "Command '%s' not found.\n", args[0]);
+            if (pmn) {
+                printf("You may install it using:\n");
+                printf("%s%s\n", pmn, args[0]);
+                // exit особый нужен
+            } else {
+                perror("Packet manager not found.");
+            }
         }
         // If the program execution is successful, execvp() will never return, as the current process is replaced by the new program
         exit(EXIT_FAILURE);

@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug C Program",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/shell",  // Путь к исполнимому файлу
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+              {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+              }
+            ],
+            "miDebuggerPath": "/usr/bin/gdb",  // Путь к gdb
+            "preLaunchTask": "build",  // Ссылка на задачу сборки, о которой будет говориться ниже
+            "serverLaunchTimeout": 2000,
+            "filterStderr": true,
+            "filterStdout": true
+          }
+    ]
+}

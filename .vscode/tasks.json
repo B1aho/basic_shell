@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "build",
+        "type": "shell",
+        "command": "/usr/bin/gcc", 
+        "args": [
+          "-g",  // Генерация отладочной информации
+          "-I", "${workspaceFolder}/include",
+          "${workspaceFolder}/main.c",   // Главный файл
+          "${workspaceFolder}/shell_core.c",  // Дополнительные файлы
+          "${workspaceFolder}/shell_builtin.c",  // Дополнительные файлы
+          "-o",
+          "${workspaceFolder}/shell"  // Имя исполнимого файла
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": ["$gcc"],
+        "detail": "Generated task for building C files"
+      }
+    ]
+  }
+  

@@ -1,5 +1,6 @@
 #include <stdlib.h>
-#include "shell.h"
+#include <stdio.h>
+#include "include/shell.h"
 
 int main(void) {
     // Run command loop

@@ -20,4 +20,9 @@ int num_builtins(void);
 extern char *builtin_str[];
 extern int (*builtin_func[])(char **);
 
+typedef struct {
+    const char *path;
+    const char *suggestion;
+} PackageManager;
+
 #endif 
