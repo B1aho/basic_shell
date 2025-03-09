@@ -86,7 +86,7 @@ char *read_line() {
             buffer[buff_idx++] = ch;
         }
 
-        // Suddenly, line is bigger then buffer
+        // If, suddenly, line is bigger then buffer
         if (buff_idx >= buff_size) {
             buff_size += LINE_BUFF_SIZE;
             buffer = realloc(buffer, buff_size);
@@ -124,6 +124,26 @@ int shell_launch(char **args) {
     return 1;
 }
 
+// Get current working directory
+char *get_cwd(void) {
+    char *cwd = getcwd(NULL, 0);
+    if (!cwd) {
+        perror("getcwd");
+        return NULL;
+    }
+    // Get home directory
+    char *home = getenv("HOME"); 
+    char *shorter_cwd = NULL;
+    if (home && strncmp(cwd, home, strlen(home)) == 0) {
+        // Change home in cwd with ~
+        shorter_cwd = (char *)malloc(sizeof(char) * (strlen(cwd) - strlen(home) + 2));
+        shorter_cwd[0] = '~';
+        strcpy(&shorter_cwd[1], &cwd[strlen(home)]);
+        free(cwd);
+    }
+    return shorter_cwd;
+} 
+
 // Execute command
 int shell_execute(char **args) {
   int i;
@@ -153,15 +173,24 @@ void shell_loop(void) {
     char *line;
     char** args;
     int status = 0;
-    
+    char *cwd = get_cwd();
+    if (cwd == NULL) {
+        return;
+    }
     do {
-        printf("> ");
+        printf("%s> ", cwd);
         line = read_line();
         args = parse_line(line);
         print_args(args);
         status = shell_execute(args);
+        // Update cwd if working directory changed
+        if (args[0] && !strncmp(args[0], "cd", 2)) {
+            free(cwd);
+            cwd = get_cwd();
+        }
     } while (status);
 
     free(line);
     free(args);
+    free(cwd);
 }

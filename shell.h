@@ -2,7 +2,6 @@
 #define SHELL_H
 
 #include <unistd.h>
-
 #define ARGS_SIZE 40
 #define SPACE " \t\r\n\a"
 #define LINE_BUFF_SIZE 1024
