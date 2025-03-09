@@ -29,8 +29,33 @@ char **parse_line(char *line) {
     is_buff_error(args);
     // The function returns lexemes from the string and replaces delimiters with \0
     char *token = strtok(line, SPACE);
+    char is_quote_arg = 0;
     while (token != NULL) {
-        args[position++] = token;
+        // Parse quoted string as one whole argument
+        if (token[0] == '"') {
+            char *arg = malloc(strlen(token) + 2);
+            token++;
+            strcpy(arg, token);
+            arg[strlen(token)] = ' ';
+            // Find next part with closing quote
+            while (1) {
+                token = strtok(NULL, "\"");
+                if (token == NULL)
+                    break;
+                char *temp = malloc(strlen(arg) + strlen(token) + 2);
+                sprintf(temp, "%s %s", arg, token);
+                free(arg);
+                arg = temp;
+                break;
+            }
+            args[position++] = arg;
+            is_quote_arg = 1;
+        }
+
+        if (!is_quote_arg)
+            args[position++] = token;
+
+        is_quote_arg = 0;
 
         if (position >= args_size) {
             args_size += ARGS_SIZE;
@@ -81,14 +106,12 @@ int shell_launch(char **args) {
         // The child process code - init process with new programm (that user want to execute)
         if (execvp(args[0], args)) {
             perror("execute programm fail");
-            printf("> ");
         }
         // If the program execution is successful, execvp() will never return, as the current process is replaced by the new program
         exit(EXIT_FAILURE);
     } else if (pid < 0) {
         // If error appear
         perror("fork fail");
-        printf("> ");
     } else {
         // The parent process code - waits for the child process to finish.
         // The system call waitpid() blocks the execution of the current process until the child process 
