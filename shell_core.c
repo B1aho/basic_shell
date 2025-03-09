@@ -16,7 +16,7 @@ void is_buff_error(void *ptr) {
 void print_args(char **args) {
     int pos = 0;
     while (args[pos] != NULL) {
-        printf("%d)arg - %s\n", pos + 1, args[pos]);
+        printf("%d) - %s\n", pos + 1, args[pos]);
         pos++;
     }
     return;
@@ -81,12 +81,14 @@ int shell_launch(char **args) {
         // The child process code - init process with new programm (that user want to execute)
         if (execvp(args[0], args)) {
             perror("execute programm fail");
+            printf("> ");
         }
         // If the program execution is successful, execvp() will never return, as the current process is replaced by the new program
         exit(EXIT_FAILURE);
     } else if (pid < 0) {
         // If error appear
         perror("fork fail");
+        printf("> ");
     } else {
         // The parent process code - waits for the child process to finish.
         // The system call waitpid() blocks the execution of the current process until the child process 
@@ -133,6 +135,7 @@ void shell_loop(void) {
         printf("> ");
         line = read_line();
         args = parse_line(line);
+        print_args(args);
         status = shell_execute(args);
     } while (status);
 
