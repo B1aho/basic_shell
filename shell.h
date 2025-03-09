@@ -6,5 +6,11 @@
 #define LINE_BUFF_SIZE 1024
 
 void shell_loop(void);
+/*
+  Function Declarations for builtin shell commands:
+ */
+int shell_help(char **args);
+int shell_cd(char **args);
+int shell_exit(char **args);
 
 #endif 

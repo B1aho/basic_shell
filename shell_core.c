@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "shell.h"
+
 // Check if buffer allocated with error
 void is_buff_error(void *ptr) {
     if (!ptr) {
@@ -23,7 +24,6 @@ void print_args(char **args) {
 }
 
 // Parse line by spaces
-
 char **parse_line(char *line) {
     int args_size = ARGS_SIZE, position = 0;
     char **args = malloc(sizeof(char *) * args_size);
@@ -81,13 +81,13 @@ int shell_launch(char **args) {
     if (pid == 0) {
         // The child process code - init process with new programm (that user want to execute)
         if (execvp(args[0], args)) {
-            perror('shell: execute programm fail');
+            perror("execute programm fail");
         }
         // If the program execution is successful, execvp() will never return, as the current process is replaced by the new program
         exit(EXIT_FAILURE);
     } else if (pid < 0) {
         // If error appear
-        perror("shell: fork fail");
+        perror("fork fail");
     } else {
         // The parent process code - waits for the child process to finish.
         // The system call waitpid() blocks the execution of the current process until the child process 
@@ -114,7 +114,7 @@ void shell_loop(void) {
         printf("> ");
         line = read_line();
         args = parse_line(line);
-        print_args(args);
+        status = shell_launch(args);
         //status = execute_command(args);
     } while (status);
 
