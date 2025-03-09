@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include "shell.h"
 // Check if buffer allocated with error
 void is_buff_error(void *ptr) {
@@ -67,6 +70,36 @@ char *read_line() {
         }
     }
 }
+
+int shell_launch(char **args) {
+    pid_t pid, wait_pid;
+    int status;
+
+    // Forking the current process 
+    pid = fork();
+    // After the fork() call, two processes run in parallel from this point: the parent and the child.
+    if (pid == 0) {
+        // The child process code - init process with new programm (that user want to execute)
+        if (execvp(args[0], args)) {
+            perror('shell: execute programm fail');
+        }
+        // If the program execution is successful, execvp() will never return, as the current process is replaced by the new program
+        exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+        // If error appear
+        perror("shell: fork fail");
+    } else {
+        // The parent process code - waits for the child process to finish.
+        // The system call waitpid() blocks the execution of the current process until the child process 
+        // it created either terminates or change state
+        do {
+            wait_pid = waitpid(wait_pid, &status, WUNTRACED);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+    // Child process was finished, return success, so shell could prompt for the next command
+    return 1;
+}
+
 /**
  * 1. Read command from standart input - stdin
  * 2. Parse command
