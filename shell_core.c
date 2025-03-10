@@ -37,6 +37,14 @@ PackageInfo detect_pkg_manager() {
 
 // Check if package avaliable to download
 int package_available(const char *pkg_manager, const char *package) {
+    // Create a pipe so that the child process writes package information into a buffer instead of the console,
+    // allowing the parent process to read it.
+    int pipefd[2];
+    if (pipe(pipefd) == -1) {
+        perror("pipe");
+        return 0;
+    }
+
     pid_t pid = fork();
     if (pid < 0) {
         perror("fork");
@@ -45,6 +53,13 @@ int package_available(const char *pkg_manager, const char *package) {
 
     // Check package avaliability in child process
     if (pid == 0) {
+        // Child don't read, just write
+        close(pipefd[0]);
+        // Redirect standart streams into the pipe write
+        dup2(pipefd[1], STDOUT_FILENO); 
+        dup2(pipefd[1], STDERR_FILENO);
+        // We don't need it anymore
+        close(pipefd[1]);
         if (strstr(pkg_manager, "apt")) {
             execlp("apt-cache", "apt-cache", "show", package, NULL);
         } else if (strstr(pkg_manager, "yum") || strstr(pkg_manager, "dnf")) {
@@ -56,13 +71,28 @@ int package_available(const char *pkg_manager, const char *package) {
         } else if (strstr(pkg_manager, "brew")) {
             execlp("brew", "brew", "info", package, NULL);
         }
-        exit(EXIT_FAILURE);  
+        _exit(EXIT_FAILURE);  
     } 
+    close(pipefd[1]); 
+    // Parent process read all child input that smaller 128 bytes
+    char buffer[128];
+    long unsigned int nbytes = 0, totalBytes = 0;
+    while ((nbytes = read(pipefd[0], buffer + totalBytes, sizeof(buffer) - totalBytes - 1)) > 0) {
+        totalBytes += nbytes;
+        if (totalBytes >= sizeof(buffer) - 1) break;
+    }
+    buffer[totalBytes] = '\0';
+    close(pipefd[0]);
     // Block waiting for parent process
     int status;
     waitpid(pid, &status, 0);
-    
-    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    if (WEXITSTATUS(status) == 0 && totalBytes > 0) {
+        // Package avaliable
+        return 1; 
+    } else {
+        // No package in manager cache
+        return 0;
+    }
 }
 
 void print_args(char **args) {
@@ -162,17 +192,16 @@ int shell_launch(char **args) {
             if (pack_info.pmn) {
                 if (package_available(pack_info.pmn, args[0])) {
                     printf("You may install it using:\n");
-                    printf("%s%s\n", pack_info.suggestion, args[0]);
+                    printf("%s %s\n", pack_info.suggestion, args[0]);
                 } else {
-                    printf("Package is not avaliable");
+                    printf("Package is not avaliable\n");
                 }
-                // exit особый нужен
             } else {
-                perror("Package manager not found.");
+                perror("Package manager not found.\n");
             }
         }
         // If the program execution is successful, execvp() will never return, as the current process is replaced by the new program
-        exit(EXIT_FAILURE);
+        _exit(EXIT_FAILURE);
     } else if (pid < 0) {
         // If error appear
         perror("fork fail");

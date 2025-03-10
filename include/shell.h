@@ -8,6 +8,7 @@
 #define GREEN "\033[1;32m"
 #define BLUE "\033[1;34m"
 #define RESET_COLOR "\033[0m"
+
 void shell_loop(void);
 /*
   Function Declarations for builtin shell commands:
@@ -20,9 +21,9 @@ int num_builtins(void);
 extern char *builtin_str[];
 extern int (*builtin_func[])(char **);
 
-typedef struct {
-  const char *pmn;
+typedef struct packInfo{
   const char *suggestion;
+  const char *pmn;
 } PackageInfo;
 
 typedef struct {
