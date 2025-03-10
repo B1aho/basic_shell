@@ -18,7 +18,7 @@
 `./shell`
 
 ## Example:
-
+[gif.gif]
 
 ## Future Improvements
 - Implement piping (|) and redirection (>, <)
