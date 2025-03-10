@@ -4,3 +4,4 @@ main
 program
 *.exe
 *.bin
+shell
